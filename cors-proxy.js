@@ -59,6 +59,7 @@ async function handleRequest (request) {
         return response
 }
 
-addEventListener("fetch", event => {
-  event.respondWith(handleRequest(event.request))
-})
+module.exports = {
+    handleOptions,
+    handleRequest
+}
