@@ -3,6 +3,19 @@ import datamuse from "datamuse";
 import * as z from "zod";
 import { fetchIPA } from "./helpers/unalengua.js";
 
+const cachedFunction = (func, opts) => {
+    return async (input) => {
+        const key = opts.getKey(input);
+
+        // check cache
+        
+        const response = await func(input);
+
+        // cache response;
+
+        return response;
+    }
+}
 
 const grabSynonyms = cachedFunction(
   async (input) => {
