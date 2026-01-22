@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "datamuse": "^1.0.5",
+    "dotenv": "^17.2.3",
     "google-translate-api-x": "^10.7.2",
     "wrangler": "^4.59.3",
     "zod": "^4.3.5"

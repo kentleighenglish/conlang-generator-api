@@ -3,6 +3,8 @@ const datamuse = require("datamuse");
 const z = require("zod");
 const { fetchIPA } = require("./helpers/unalengua.js");
 
+require("./cors-proxy.js");
+
 const cachedFunction = (func, opts) => {
     return async (...input) => {
         const key = opts.getKey(...input);
