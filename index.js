@@ -1,31 +1,12 @@
 import translate from "google-translate-api-x";
-// @ts-expect-error there are no datamuse types, and can't be bothered to make some
 import datamuse from "datamuse";
 import * as z from "zod";
 import { fetchIPA } from "./helpers/unalengua.js";
 
-// import { OldManergot } from "../languages/old-manergot";
-
-// import {
-//   type Translation,
-//   type TranslateResponse,
-//   type LanguageKey,
-//   ValidLanguages,
-// } from "../../types/translate";
-
-// type LanguageClassConstructor = new () => LanguageClass;
-// const languages: LanguageClassConstructor[] = [
-//     OldManergot,
-//     // "New Manergot":
-//     // "Tamani":
-//     // "Ogma":
-// ];
-
-// type ScoredWord = { word: string; score: number };
 
 const grabSynonyms = cachedFunction(
-  async (input: string): Promise<ScoredWord[]> => {
-    const synonyms: Array<{ word: string; score: number }> = await datamuse.request(`words?rel_syn=${input}`);
+  async (input) => {
+    const synonyms = await datamuse.request(`words?rel_syn=${input}`);
 
     const filteredSyns = synonyms
       .filter((synonym) => !synonym.word.includes(" "))
@@ -36,16 +17,16 @@ const grabSynonyms = cachedFunction(
   {
     maxAge: 60 * 60,
     name: "synonyms",
-    getKey: (input: string) => `synonyms:${input}`,
+    getKey: (input) => `synonyms:${input}`,
   },
 );
 
 const grabTranslation = cachedFunction(
   async (
-    inputWord: string,
-    inputLang: LanguageKey,
-    outputLang: LanguageKey,
-  ): Promise<Pick<Translation, "translated" | "translatedIPA">> => {
+    inputWord,
+    inputLang,
+    outputLang,
+  ) => {
     try {
       const response = await translate(inputWord, { from: inputLang, to: outputLang });
 
@@ -64,26 +45,19 @@ const grabTranslation = cachedFunction(
   {
     maxAge: 60 * 60,
     name: "translation",
-    getKey: (input: string, lang: string) => `translation:${input}:${lang}`,
+    getKey: (input, lang) => `translation:${input}:${lang}`,
   },
 );
 
-const LanguageEnum = z.enum(Object.keys(ValidLanguages) as LanguageKey[]);
+const LanguageEnum = z.enum(Object.keys(ValidLanguages));
 const ValidQuery = z.object({
   input: z.string(),
   outputLang: LanguageEnum,
   inputLang: LanguageEnum,
   synonymCount: z.coerce.number().optional(),
 });
-export default defineEventHandler(async (event): Promise<TranslateResponse> => {
-  const query = getQuery<{
-    input: string;
-    outputLang: LanguageKey;
-    inputLang: LanguageKey;
-    synonymCount?: number; 
-  }>(
-    event,
-  );
+export default defineEventHandler(async (event) => {
+  const query = getQuery(event);
 
   const { input = null, inputLang, outputLang, synonymCount = 0 } = ValidQuery.parse(query);
 
@@ -102,12 +76,12 @@ export default defineEventHandler(async (event): Promise<TranslateResponse> => {
 
   const inputLowercase = splitInput.map(str => str.toLowerCase().trim());
 
-  const langKeys = outputLang.split(",") as LanguageKey[];
+  const langKeys = outputLang.split(",");
 
-  const output: TranslateResponse = {};
+  const output = {};
 
   for (const word of inputLowercase) {
-    const translated: Translation[] = [];
+    const translated = [];
     const originalIPA = await fetchIPA(word, inputLang);
 
     for (const lang of langKeys) {
