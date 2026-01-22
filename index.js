@@ -1,15 +1,15 @@
-import translate from "google-translate-api-x";
-import datamuse from "datamuse";
-import * as z from "zod";
-import { fetchIPA } from "./helpers/unalengua.js";
+const translate = require("google-translate-api-x");
+const datamuse = require("datamuse");
+const z = require("zod");
+const { fetchIPA } = require("./helpers/unalengua.js");
 
 const cachedFunction = (func, opts) => {
-    return async (input) => {
-        const key = opts.getKey(input);
+    return async (...input) => {
+        const key = opts.getKey(...input);
 
         // check cache
         
-        const response = await func(input);
+        const response = await func(...input);
 
         // cache response;
 
@@ -75,6 +75,10 @@ export default {
     const { searchParams } = new URL(request.url);
     const query = Object.fromEntries(searchParams.entries());
 
+    if (!query.input || !query.inputLang || !query.outputLang) {
+        return new Response("[]");
+    }
+
     const { input = null, inputLang, outputLang, synonymCount = 0 } = ValidQuery.parse(query);
 
     if (!input) {
@@ -99,42 +103,42 @@ export default {
     for (const word of inputLowercase) {
         const translated = [];
         const originalIPA = await fetchIPA(word, inputLang);
-
+        
         for (const lang of langKeys) {
-        const translatedWord = await grabTranslation(word, inputLang, lang);
+            const translatedWord = await grabTranslation(word, inputLang, lang);
 
-        if (translatedWord) {
-            translated.push({
-            ...translatedWord,
-            baseWord: word,
-            original: word,
-            originalIPA,
-            lang,
-            score: 10000,
-            });
-        }
-
-        if (synonymCount > 0) {
-            const synonyms = await grabSynonyms(word); // these have to be inputted in English
-
-            const slicedSynonyms = (synonyms ?? []).slice(0, synonymCount);
-
-            for (const synonymWord of slicedSynonyms) {
-            const translatedSynonymWord = await grabTranslation(synonymWord.word, inputLang, lang);
-            const synonymIPA = await fetchIPA(synonymWord.word, inputLang);
-
-            if (translatedSynonymWord) {
+            if (translatedWord) {
                 translated.push({
-                ...translatedSynonymWord,
+                ...translatedWord,
                 baseWord: word,
-                original: synonymWord.word,
-                originalIPA: synonymIPA,
-                score: synonymWord.score,
+                original: word,
+                originalIPA,
                 lang,
+                score: 10000,
                 });
             }
+
+            if (synonymCount > 0) {
+                const synonyms = await grabSynonyms(word); // these have to be inputted in English
+
+                const slicedSynonyms = (synonyms ?? []).slice(0, synonymCount);
+
+                for (const synonymWord of slicedSynonyms) {
+                const translatedSynonymWord = await grabTranslation(synonymWord.word, inputLang, lang);
+                const synonymIPA = await fetchIPA(synonymWord.word, inputLang);
+
+                if (translatedSynonymWord) {
+                    translated.push({
+                    ...translatedSynonymWord,
+                    baseWord: word,
+                    original: synonymWord.word,
+                    originalIPA: synonymIPA,
+                    score: synonymWord.score,
+                    lang,
+                    });
+                }
+                }
             }
-        }
         }
         
         if (!translated.length) {
@@ -144,6 +148,6 @@ export default {
         output[word] = translated;
     }
 
-    return output;
+    return new Response(JSON.stringify(output));
   }
 };
