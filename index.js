@@ -62,84 +62,88 @@ const grabTranslation = cachedFunction(
   },
 );
 
-const LanguageEnum = z.enum(Object.keys(ValidLanguages));
+const LanguageEnum = z.enum(["en", "de", "ru"]);
 const ValidQuery = z.object({
   input: z.string(),
   outputLang: LanguageEnum,
   inputLang: LanguageEnum,
   synonymCount: z.coerce.number().optional(),
 });
-export default defineEventHandler(async (event) => {
-  const query = getQuery(event);
 
-  const { input = null, inputLang, outputLang, synonymCount = 0 } = ValidQuery.parse(query);
+export default {
+  async fetch(request) {
+    const { searchParams } = new URL(request.url);
+    const query = Object.fromEntries(searchParams.entries());
 
-  if (!input) {
-    throw "Input required";
-  }
-  
-  const splitInput = input.split(",");
+    const { input = null, inputLang, outputLang, synonymCount = 0 } = ValidQuery.parse(query);
 
-  if (!inputLang) {
-    throw "Input Language required";
-  }
-  if (!outputLang) {
-    throw "Output Language required";
-  }
-
-  const inputLowercase = splitInput.map(str => str.toLowerCase().trim());
-
-  const langKeys = outputLang.split(",");
-
-  const output = {};
-
-  for (const word of inputLowercase) {
-    const translated = [];
-    const originalIPA = await fetchIPA(word, inputLang);
-
-    for (const lang of langKeys) {
-      const translatedWord = await grabTranslation(word, inputLang, lang);
-
-      if (translatedWord) {
-        translated.push({
-          ...translatedWord,
-          baseWord: word,
-          original: word,
-          originalIPA,
-          lang,
-          score: 10000,
-        });
-      }
-
-      if (synonymCount > 0) {
-        const synonyms = await grabSynonyms(word); // these have to be inputted in English
-
-        const slicedSynonyms = (synonyms ?? []).slice(0, synonymCount);
-
-        for (const synonymWord of slicedSynonyms) {
-          const translatedSynonymWord = await grabTranslation(synonymWord.word, inputLang, lang);
-          const synonymIPA = await fetchIPA(synonymWord.word, inputLang);
-
-          if (translatedSynonymWord) {
-            translated.push({
-              ...translatedSynonymWord,
-              baseWord: word,
-              original: synonymWord.word,
-              originalIPA: synonymIPA,
-              score: synonymWord.score,
-              lang,
-            });
-          }
-        }
-      }
+    if (!input) {
+        throw "Input required";
     }
     
-    if (!translated.length) {
-      throw `Cannot translate ${word}`;
+    const splitInput = input.split(",");
+
+    if (!inputLang) {
+        throw "Input Language required";
+    }
+    if (!outputLang) {
+        throw "Output Language required";
     }
 
-    output[word] = translated;
-  }
+    const inputLowercase = splitInput.map(str => str.toLowerCase().trim());
 
-  return output;
-});
+    const langKeys = outputLang.split(",");
+
+    const output = {};
+
+    for (const word of inputLowercase) {
+        const translated = [];
+        const originalIPA = await fetchIPA(word, inputLang);
+
+        for (const lang of langKeys) {
+        const translatedWord = await grabTranslation(word, inputLang, lang);
+
+        if (translatedWord) {
+            translated.push({
+            ...translatedWord,
+            baseWord: word,
+            original: word,
+            originalIPA,
+            lang,
+            score: 10000,
+            });
+        }
+
+        if (synonymCount > 0) {
+            const synonyms = await grabSynonyms(word); // these have to be inputted in English
+
+            const slicedSynonyms = (synonyms ?? []).slice(0, synonymCount);
+
+            for (const synonymWord of slicedSynonyms) {
+            const translatedSynonymWord = await grabTranslation(synonymWord.word, inputLang, lang);
+            const synonymIPA = await fetchIPA(synonymWord.word, inputLang);
+
+            if (translatedSynonymWord) {
+                translated.push({
+                ...translatedSynonymWord,
+                baseWord: word,
+                original: synonymWord.word,
+                originalIPA: synonymIPA,
+                score: synonymWord.score,
+                lang,
+                });
+            }
+            }
+        }
+        }
+        
+        if (!translated.length) {
+        throw `Cannot translate ${word}`;
+        }
+
+        output[word] = translated;
+    }
+
+    return output;
+  }
+};
