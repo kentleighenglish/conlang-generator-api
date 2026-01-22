@@ -1,0 +1,5 @@
+{
+    "name": "conglang-generator-api",
+    "compatibility_date": "2026-01-22",
+    "main": "index.js"
+}
