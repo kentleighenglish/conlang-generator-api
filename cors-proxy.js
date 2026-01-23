@@ -33,7 +33,7 @@ function handleOptions(request) {
     // If you want to allow other HTTP Methods, you can do that here.
     return new Response(null, {
       headers: {
-        Allow: "GET, HEAD, POST, OPTIONS",
+        Allow: "GET, OPTIONS",
       },
     });
   }
@@ -51,7 +51,7 @@ async function handleRequest(request, response) {
   }
   response.headers.set(
     "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS",
+    "GET,OPTIONS",
   );
 
   return response;
