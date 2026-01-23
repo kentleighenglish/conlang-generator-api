@@ -77,7 +77,7 @@ const translateFetchWrapper = async (request) => {
   const query = Object.fromEntries(searchParams.entries());
 
   if (!query.input || !query.inputLang || !query.outputLang) {
-    return new Response("[]");
+    return {};
   }
 
   const {
@@ -158,7 +158,7 @@ const translateFetchWrapper = async (request) => {
     output[word] = translated;
   }
 
-  return new Response(JSON.stringify(output));
+  return output;
 };
 
 export default {
