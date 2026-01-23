@@ -1,3 +1,4 @@
+require("dotenv");
 const translate = require("google-translate-api-x");
 const datamuse = require("datamuse");
 const z = require("zod");
@@ -163,25 +164,18 @@ const translateFetchWrapper = async (request) => {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    if (url.pathname.startsWith(PROXY_ENDPOINT)) {
-      if (request.method === "OPTIONS") {
-        // Handle CORS preflight requests
-        return handleOptions(request);
-      } else if (
-        request.method === "GET" ||
-        request.method === "HEAD" ||
-        request.method === "POST"
-      ) {
-        // Handle requests to the API server
-        return handleRequest(request);
-      } else {
-        return new Response(null, {
-          status: 405,
-          statusText: "Method Not Allowed",
-        });
-      }
+    if (request.method === "OPTIONS") {
+      // Handle CORS preflight requests
+      return handleOptions(request);
+    } else if (request.method === "GET") {
+      // Handle requests to the API server
+      const output = await translateFetchWrapper(request);
+      return handleRequest(request, new Response(JSON.stringify(output)));
     } else {
-      return translateFetchWrapper(request);
+      return new Response(null, {
+        status: 405,
+        statusText: "Method Not Allowed",
+      });
     }
   },
 };
