@@ -71,7 +71,7 @@ const ValidQuery = z.object({
   synonymCount: z.coerce.number().optional(),
 });
 
-const translate = async (request) => {
+const translateFetchWrapper = async (request) => {
   const { searchParams } = new URL(request.url);
   const query = Object.fromEntries(searchParams.entries());
 
@@ -181,7 +181,7 @@ export default {
         });
       }
     } else {
-      return translate(request);
+      return translateFetchWrapper(request);
     }
   },
 };
