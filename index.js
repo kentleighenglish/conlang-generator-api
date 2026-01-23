@@ -170,7 +170,10 @@ export default {
     } else if (request.method === "GET") {
       // Handle requests to the API server
       const output = await translateFetchWrapper(request);
-      return handleRequest(request, new Response(JSON.stringify(output)));
+      const response = new Response(JSON.stringify(output));
+      response.headers.set("Content-Type", "application/json");
+
+      return handleRequest(request, response);
     } else {
       return new Response(null, {
         status: 405,
