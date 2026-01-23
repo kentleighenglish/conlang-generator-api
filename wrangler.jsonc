@@ -1,5 +1,5 @@
 {
-    "name": "conglang-generator-api",
+    "name": "conlang-generator-api",
     "compatibility_date": "2026-01-22",
     "main": "index.js",
     "compatibility_flags": [
